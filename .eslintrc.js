@@ -37,5 +37,6 @@ module.exports = {
     'no-undef': 'off',
     'import/namespace': 'off',
     'jsx-a11y/anchor-is-valid': 'off',
+    '@typescript-eslint/no-empty-interface': 'off',
   },
 };

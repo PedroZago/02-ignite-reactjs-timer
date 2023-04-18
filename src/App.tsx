@@ -1,5 +1,15 @@
 import React from 'react';
+import { ThemeProvider } from 'styled-components';
 
-export function App() {
-  return <h1>Hello World</h1>;
-}
+import { GlobalStyle } from './styles/global';
+import { defaultTheme } from './styles/themes/default';
+
+export const App = () => {
+  return (
+    <ThemeProvider theme={defaultTheme}>
+      <h1>Hello World</h1>
+
+      <GlobalStyle />
+    </ThemeProvider>
+  );
+};
