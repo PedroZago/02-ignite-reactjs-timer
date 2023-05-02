@@ -1,17 +1,22 @@
-import React, { ReactNode, createContext, useContext, useState } from 'react';
+import { differenceInSeconds } from 'date-fns';
+import React, {
+  createContext,
+  ReactNode,
+  useEffect,
+  useReducer,
+  useState,
+} from 'react';
+
+import {
+  addNewCycleAction,
+  finishCurrentCycleAction,
+  interruptCurrentCycleAction,
+} from '../reducers/cycles/actions';
+import { Cycle, CyclesState, cyclesReducer } from '../reducers/cycles/reducer';
 
 interface CreateCycleData {
   task: string;
   minutesAmount: number;
-}
-
-export interface Cycle {
-  id: string;
-  task: string;
-  minutesAmount: number;
-  startDate: Date;
-  interruptedDate?: Date;
-  finishedDate?: Date;
 }
 
 interface CyclesProviderProps {
@@ -20,62 +25,55 @@ interface CyclesProviderProps {
 
 interface CyclesContextProps {
   activeCycle?: Cycle;
-
   createNewCycle: (data: CreateCycleData) => void;
   markCurrentCycleAsFinished: () => void;
   markCurrentCycleAsInterrupted: () => void;
-
   cycles: Cycle[];
-  updateCycles: (newCycle: Cycle) => void;
-
   activeCycleId: string | null;
-  updateActiveCycleId: (newCycleId: string) => void;
-
   amountSecondsPassed: number;
   updateAmountSecondsPassed: (secondsPassed: number) => void;
 }
 
-const CyclesContext = createContext({} as CyclesContextProps);
+export const CyclesContext = createContext({} as CyclesContextProps);
 
 export const CyclesProvider: React.FC<CyclesProviderProps> = ({ children }) => {
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
-  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0);
+  const [cyclesState, dispatch] = useReducer(
+    cyclesReducer,
+    {
+      cycles: [],
+      activeCycleId: null,
+    } as CyclesState,
+    initialState => {
+      const storedStateAsJSON = localStorage.getItem(
+        '@ignite-timer:cycles-state-1.0.0'
+      );
 
+      if (storedStateAsJSON) {
+        return JSON.parse(storedStateAsJSON);
+      }
+
+      return initialState;
+    }
+  );
+
+  const { activeCycleId, cycles } = cyclesState;
   const activeCycle = cycles.find(cycle => cycle.id === activeCycleId);
 
-  const markCurrentCycleAsFinished = () => {
-    setCycles(oldState =>
-      oldState.map(cycle =>
-        cycle.id === activeCycleId
-          ? { ...cycle, finishedDate: new Date() }
-          : cycle
-      )
-    );
-  };
+  const [amountSecondsPassed, setAmountSecondsPassed] = useState(() => {
+    if (activeCycle) {
+      return differenceInSeconds(new Date(), new Date(activeCycle.startDate));
+    }
 
-  const markCurrentCycleAsInterrupted = () => {
-    setCycles(oldState =>
-      oldState.map(cycle =>
-        cycle.id === activeCycleId
-          ? { ...cycle, interruptedDate: new Date() }
-          : cycle
-      )
-    );
-    setActiveCycleId(null);
-  };
+    return 0;
+  });
 
-  const updateCycles = (newCycle: Cycle) => {
-    setCycles(oldState => [...oldState, newCycle]);
-  };
+  const markCurrentCycleAsFinished = () => dispatch(finishCurrentCycleAction());
 
-  const updateActiveCycleId = (newCycleId: string) => {
-    setActiveCycleId(newCycleId);
-  };
+  const markCurrentCycleAsInterrupted = () =>
+    dispatch(interruptCurrentCycleAction());
 
-  const updateAmountSecondsPassed = (secondsPassed: number) => {
+  const updateAmountSecondsPassed = (secondsPassed: number) =>
     setAmountSecondsPassed(secondsPassed);
-  };
 
   const createNewCycle = (data: CreateCycleData) => {
     const id = new Date().getTime().toString();
@@ -87,28 +85,25 @@ export const CyclesProvider: React.FC<CyclesProviderProps> = ({ children }) => {
       startDate: new Date(),
     };
 
-    updateCycles(newCycle);
-    updateActiveCycleId(id);
+    dispatch(addNewCycleAction(newCycle));
     updateAmountSecondsPassed(0);
-
-    // reset();
   };
+
+  useEffect(() => {
+    const stateJSON = JSON.stringify(cyclesState);
+
+    localStorage.setItem('@ignite-timer:cycles-state-1.0.0', stateJSON);
+  }, [cyclesState]);
 
   return (
     <CyclesContext.Provider
       value={{
         activeCycle,
-
         createNewCycle,
         markCurrentCycleAsFinished,
         markCurrentCycleAsInterrupted,
-
         cycles,
-        updateCycles,
-
         activeCycleId,
-        updateActiveCycleId,
-
         amountSecondsPassed,
         updateAmountSecondsPassed,
       }}
@@ -116,8 +111,4 @@ export const CyclesProvider: React.FC<CyclesProviderProps> = ({ children }) => {
       {children}
     </CyclesContext.Provider>
   );
-};
-
-export const useCycles = () => {
-  return useContext(CyclesContext);
 };

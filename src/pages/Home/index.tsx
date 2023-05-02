@@ -4,7 +4,7 @@ import React from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import * as zod from 'zod';
 
-import { useCycles } from '../../contexts/CyclesContext';
+import { useCycles } from '../../hooks/useCycle';
 import { NewCycleForm, Countdown } from './components';
 import * as S from './styles';
 

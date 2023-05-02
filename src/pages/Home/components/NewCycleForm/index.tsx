@@ -2,7 +2,7 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import { NewCycleFormData } from '../..';
-import { useCycles } from '../../../../contexts/CyclesContext';
+import { useCycles } from '../../../../hooks/useCycle';
 import * as S from './styles';
 
 export const NewCycleForm = () => {
