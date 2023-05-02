@@ -1,6 +1,6 @@
 import { produce } from 'immer';
 
-import { ActionTypes } from './actions';
+import { ActionTypes, ActionsProp } from './actions';
 
 export interface CyclesState {
   cycles: Cycle[];
@@ -16,11 +16,10 @@ export interface Cycle {
   finishedDate?: Date;
 }
 
-export const cyclesReducer = (state: CyclesState, action: any) => {
+export const cyclesReducer = (state: CyclesState, action: ActionsProp) => {
   switch (action.type) {
     case ActionTypes.ADD_NEW_CYCLE:
       return produce(state, draft => {
-        console.log('opaaaa');
         draft.cycles.push(action.payload.newCycle);
         draft.activeCycleId = action.payload.newCycle.id;
       });
